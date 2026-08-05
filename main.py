@@ -1,4 +1,9 @@
 from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel
+from typing import Optional
+
+class Task(BaseModel):
+    title: Optional[str] = None
 
 app = FastAPI()
 
@@ -8,6 +13,17 @@ tasks = [
     {"id": 2, "title": "Read a book", "done": True},
     {"id": 3, "title": "Write code", "done": False}
 ]
+
+@app.post("/tasks", status_code=status.HTTP_201_CREATED)
+async def create_task(new_task: Task):
+    if not new_task.title or new_task.title is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title is required and can't be empty"
+        )
+    task = {"id": max(t["id"] for t in tasks) + 1, "title": new_task.title, "done": False}
+    tasks.append(task)
+    return task
 
 @app.get("/tasks")
 async def get_tasks():
@@ -34,21 +50,24 @@ async def health_check():
 
 
 '''
+Stage 3 — Create: POST a new task (~1 h)
+A customer walks in with a new order.
 
-Stage 2 — Read: list and single task (~1 h)
-Now the shelves. Your "database" is just a list in your code.
+Add POST /tasks . The client sends the new task as JSON in the request body :
+{ "title": "Buy milk" }
 
-Near the top of your file, create an in-memory list of task objects, pre-filled with 3 example tasks. Each task has: id (number), title (text), done (true/false).
+Your server: gives it the next free id , sets done to false , adds it to the list, and returns the created task with status 201 ("Created" — the polite way to say "done, here's your receipt").
 
-Add GET /tasks — returns the whole list.
+Validate the input: if title is missing or empty, return 400 ("Bad Request") with a JSON error saying what's wrong. This is your first business rule — the server never trusts the client.
 
-Add GET /tasks/:id (Express) / GET /tasks/{id} (FastAPI) — returns one task. The id part is a path parameter : a piece of the URL that changes.
+Checkpoint:
 
-If no task has that id, return status 404 with a JSON error: { "error": "Task 99 not found" } . Never return an empty 200 for something that doesn't exist — status codes are how machines read your answers.
+curl -i -X POST [http://localhost:3000/tasks](http://localhost:3000/tasks) -H "Content-Type: application/json" -d '{"title":"Buy milk"}'
 
-Checkpoint: curl -i http://localhost:3000/tasks/1 → 200 + one task · curl -i http://localhost:3000/tasks/99 → 404 + error JSON.
+returns 201 + the new task, and a second GET /tasks shows it in the list. Posting {} returns 400.
 
-Commit: Stage 2: read endpoints with 404
+Commit: Stage 3: create with validation
+
 
 just adding into the comment hehehe
 '''
