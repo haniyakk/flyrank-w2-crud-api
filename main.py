@@ -87,27 +87,15 @@ async def health_check():
 
 
 '''
-Stage 5 — See it: Swagger UI (~1–1.5 h)
-So far you've imagined your API. Now look at it.
-
-Swagger UI is a web page that reads a description of your API (an OpenAPI file) and turns it into interactive documentation: every endpoint listed, with a Try it out button that sends real requests — curl with a friendly face.
-
-🐍 Python lane: open http://localhost:8000/docs . It's already there — FastAPI generates it from your code. Add a one-line description to each endpoint (see First steps(opens in a new tab) ) and watch the page improve.
-
-🟨 JavaScript lane: install swagger-ui-express , write a small openapi.json describing your five task endpoints (the package README(opens in a new tab) shows the wiring; OpenAPI basic structure(opens in a new tab) explains the file). Serve it at /docs . Describing endpoints you already built teaches you more than building them did.
-
-Then, in Swagger UI, without curl: create a task, list tasks, update it, delete it.
-
-Checkpoint: /docs shows all your endpoints; "Try it out" works for the full CRUD cycle. Take a screenshot for your README.
-
-Commit: Stage 5: Swagger UI
-
 Stage 6 — Publish to GitHub (~1 h)
 Your work only counts when someone else can run it.
 
 Create a public GitHub repo and push your code (your ≥6 stage commits come with it).
 
-Write a README with: what this is, how to install & run it (one documented command), a table of all endpoints, one pasted curl -i output, and your Swagger screenshot.
+Write a README with: what this is,
+ how to install & run it (one documented command),
+  a table of all endpoints, one pasted curl -i output, 
+  and your Swagger screenshot.
 
 🗓️ New to Git? The basics are all you need here: init → add → commit → push — see the W2 resources, §9. And don't worry: next week's live session covers Git & GitHub properly — branches, pull requests, and how teams review work.
 
