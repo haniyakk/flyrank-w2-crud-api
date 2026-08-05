@@ -1,11 +1,32 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, status
 
 app = FastAPI()
 
+
+tasks = [
+    {"id": 1, "title": "Workout", "done": False},
+    {"id": 2, "title": "Read a book", "done": True},
+    {"id": 3, "title": "Write code", "done": False}
+]
+
+@app.get("/tasks")
+async def get_tasks():
+    return tasks
+
+@app.get("/tasks/{task_id}")
+async def get_task(task_id: int):
+    for task in tasks:
+        if task["id"] == task_id:
+            return task
+
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND, 
+        detail=f"Task {task_id} not found"
+    )
+    
 @app.get("/")
 async def read_root():
     return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"] }
-
 
 @app.get("/health")
 async def health_check():
@@ -13,16 +34,6 @@ async def health_check():
 
 
 '''
-Stage 1 — Your first real endpoint (~45 min)
-Every API needs a front door that says what it is.
-
-Add the endpoint GET / returning JSON that describes your API:
-{ "name": "Task API", "version": "1.0", "endpoints": ["/tasks"] }
-
-Add GET /health returning { "status": "ok" } . Real companies use exactly this endpoint to check a server is alive — you've just built your first professional habit.
-Checkpoint: both URLs return JSON in the browser and via curl.
-
-Commit: Stage 1: root and health endpoints
 
 Stage 2 — Read: list and single task (~1 h)
 Now the shelves. Your "database" is just a list in your code.
@@ -38,4 +49,6 @@ If no task has that id, return status 404 with a JSON error: { "error": "Task 99
 Checkpoint: curl -i http://localhost:3000/tasks/1 → 200 + one task · curl -i http://localhost:3000/tasks/99 → 404 + error JSON.
 
 Commit: Stage 2: read endpoints with 404
+
+just adding into the comment hehehe
 '''
