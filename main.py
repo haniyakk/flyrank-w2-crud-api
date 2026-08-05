@@ -17,7 +17,7 @@ tasks = [
     {"id": 3, "title": "Write code", "done": False}
 ]
 
-@app.put("/tasks/{task_id}", status_code=status.HTTP_200_OK)
+@app.put("/tasks/{task_id}", status_code=status.HTTP_200_OK, summary="Find and update a task by ID")
 async def update_task(task_id: int, updated_task: TaskUpdate):
     for task in tasks: 
         if task["id"] == task_id:
@@ -39,7 +39,7 @@ async def update_task(task_id: int, updated_task: TaskUpdate):
             detail=f"Task {task_id} not found"
         )
 
-@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
+@app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Find and delete a task by ID")
 async def delete_task(task_id: int):
     for i, task in enumerate(tasks):
         if task["id"] == task_id:
@@ -51,7 +51,7 @@ async def delete_task(task_id: int):
         detail=f"Task {task_id} not found"
     )
 
-@app.post("/tasks", status_code=status.HTTP_201_CREATED)
+@app.post("/tasks", status_code=status.HTTP_201_CREATED, summary="Create a new task")
 async def create_task(new_task: Task):
     if not new_task.title or new_task.title is None:
         raise HTTPException(
@@ -62,11 +62,11 @@ async def create_task(new_task: Task):
     tasks.append(task)
     return task
 
-@app.get("/tasks")
+@app.get("/tasks", summary="Returns all tasks")
 async def get_tasks():
     return tasks
 
-@app.get("/tasks/{task_id}")
+@app.get("/tasks/{task_id}", summary="Search task by ID")
 async def get_task(task_id: int):
     for task in tasks:
         if task["id"] == task_id:
@@ -77,38 +77,16 @@ async def get_task(task_id: int):
         detail=f"Task {task_id} not found"
     )
     
-@app.get("/")
+@app.get("/", summary ="API Information")
 async def read_root():
     return {"name": "Task API", "version": "1.0", "endpoints": ["/tasks"] }
 
-@app.get("/health")
+@app.get("/health", summary="API Health Check")
 async def health_check():
 	return {"status": "ok" }
 
 
 '''
-
-Stage 4 — Update & Delete (~1 h)
-
-Orders change, orders get cancelled.
-
-Add PUT /tasks/:id — replaces a task's title and/or done with what's in
-the request body. Returns the updated task. Unknown 
-id → 404 . Empty/invalid body → 400 .
-
-Add DELETE /tasks/:id — removes the task. Return status 204 
-("No Content" — success, nothing to say) with an empty body. 
-Unknown id → 404 .
-
-🎉 Stop and notice: you have built a complete CRUD API. Every backend
-you'll ever work on is this, wearing more clothes.
-
-Checkpoint: create a task, update it, mark it done, delete it, and
-confirm with GET /tasks — all via curl, all with the right status codes
-(201, 200, 204, 404).
-
-Commit: Stage 4: full CRUD
-
 Stage 5 — See it: Swagger UI (~1–1.5 h)
 So far you've imagined your API. Now look at it.
 
