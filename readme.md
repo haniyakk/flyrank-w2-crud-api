@@ -60,6 +60,39 @@ content-type: application/json
 ## Me vs AI — a comparison
 
 As part of this assignment I gave an AI (Claude) the exact same spec I built against, without showing it my code, and diffed the two `main.py` files with `git diff --no-index`.
+**Here's my prompt**
+Hi, today I have a task for you 
+The task is to generate an in-memory to-do list [task  CRUD]  CRUD API project 
+here are the endpoints required for this project: 
+a api description, an api health check, one that searches task by id and gives the details, one that returns all the tasks, one that finds the tasks by id and updates them, one that finds and delete by id, one that creates a task
+the tasks will in total have these attributes/ field
+id (int), title (string), done (boolean)
+when the user is creating a task, they only input the title and one, id is incrementing automatically, when updating they give the id and title OR done is updated 
+so if the title isn't updated it shouldn't be bothered and vice versa
+when deleting, the whole task is deleted not just an attribute, handle ids appropriately. 
+so basically 5 stages 
+stage 1: setup
+stage 2: read root , and health checkup
+the description could be the attributes, and health checkup : status ok 
+and read root name: Task , version 1.0, "endpoints": ["/tasks"] }
+stage 3: return a task (search by id) and return all tasks
+if id not found: {"error": "Task [id] not found " } and in the square braces the id should be written, for return all the tasks no response body no http codes
+stage 4: creating task endpoint
+http code: 201, response body {"id": [id], "title": "[title]", "done": "[done]"}
+stage 5: updating task and deleting tasks
+and for updating use the code 200 and return the updated task like you return in the create endpoint, and for delete there is no response body hence code is 204
+For 400: return 400 Bad Request when creating a task with a missing or empty/whitespace-only title, or when updating a task with an empty/whitespace-only title. Response body: `{"error": "Title can't be empty"}` (or similar).
+http codes to be utilized 200, 204, 201, 404, 400 proper http exceptions should be raised where needed 
+all edge cases (empty string, id not found, title not empty rather "  " a space etc etc) 
+total endpoints expected: 7 
+then comes the response bodies so 
+
+Technologies to be used:
+python
+fastapi
+uvicorn
+pydantic 
+swagger
 
 **What the AI did better, and why:**
 - **Whitespace-only titles on create.** My check was `if not new_task.title or new_task.title is None:` — but `not "   "` evaluates to `False` in Python, since a non-empty string (even one that's all spaces) is truthy. So `POST /tasks` with `{"title": "   "}` slipped past my check and created a task with a blank title, even though my own spec said this should 400. The AI's version calls `.strip()` before checking emptiness, which catches it.
@@ -82,5 +115,4 @@ I understand why each of these works — they're straightforward fixes once poin
 1. Whitespace-only titles pass validation on `POST /tasks` (should 400).
 2. `POST /tasks` after deleting all tasks raises an unhandled 500 instead of assigning id `1`.
 
-
-I've fixed all three in the current version of `main.py`.
+I've fixed both in the current version of `main.py`.
