@@ -61,7 +61,6 @@ async def delete_task(task_id: int):
 
 @app.post("/tasks", status_code=status.HTTP_201_CREATED, summary="Create a new task")
 async def create_task(new_task: Task):
-    #blank title is not allowed
 
     if new_task.title is not None and not new_task.title.strip():
         raise HTTPException(
