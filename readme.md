@@ -54,3 +54,30 @@ content-type: application/json
 ## Notes
 
 - Data is stored in memory only — restarting the server resets tasks back to the 3 seed examples. This is intentional for this stage of the assignment (no database yet).
+
+## Me vs AI — a comparison
+
+As part of this assignment I gave an AI (Claude) the exact same spec I built against, without showing it my code, and diffed the two `main.py` files with `git diff --no-index`.
+
+**What the AI did better, and why:**
+- **Whitespace-only titles on create.** My check was `if not new_task.title or new_task.title is None:` — but `not "   "` evaluates to `False` in Python, since a non-empty string (even one that's all spaces) is truthy. So `POST /tasks` with `{"title": "   "}` slipped past my check and created a task with a blank title, even though my own spec said this should 400. The AI's version calls `.strip()` before checking emptiness, which catches it.
+- **Id counter vs. `max()`.** I derived new ids with `max(t["id"] for t in tasks) + 1`. That crashes with `ValueError: max() arg is an empty sequence` the moment every task has been deleted and someone posts a new one. The AI kept a separate `next_id` counter that only ever increments, independent of how many tasks currently exist — so it survives an empty list.
+- **Lookup structure.** I stored tasks as a `list` and looped through it (`for task in tasks: if task["id"] == task_id`) for every get/update/delete. The AI used a `dict` keyed by id, so those are O(1) lookups instead of O(n). Doesn't matter for a handful of tasks, but it's the right instinct.
+
+I understand why each of these works — they're straightforward fixes once pointed out, and I could reproduce them from scratch. The `not string.strip()` gap in particular is a good reminder that truthiness checks on strings don't cover whitespace.
+
+**What it got wrong or quietly changed:**
+- It started with an **empty task list**, while I seeded mine with 3 example tasks (Workout, Read a book, Write code). My prompt never specified either way — this was a silent design choice on both our parts, not something the AI got wrong against my spec. Worth flagging because it changes what `GET /tasks` returns on a fresh boot, which could matter if a grader's test assumes one or the other.
+- It didn't ignore or misapply any status code from my spec — every code (200/201/204/400/404) and every response body shape matched what I asked for when I tested it.
+
+**What my prompt didn't specify — filled in silently by the AI:**
+- Project file layout: it split the code into `models.py` (Pydantic schemas) and `main.py` (routes), rather than one file. I hadn't specified single-file vs. split.
+- The in-memory data structure (`dict` keyed by id vs. a `list`) — I hadn't specified this either, and it's the source of the O(1) vs O(n) difference above.
+- Whether the store starts empty or pre-seeded — genuinely unspecified in my prompt, and each of us defaulted differently.
+- It added a `requirements.txt` and its own README, neither of which I'd asked for, but both are reasonable defaults for a runnable project.
+
+**Bugs in my own version, caught by this exercise:**
+1. Whitespace-only titles pass validation on `POST /tasks` (should 400).
+2. `POST /tasks` after deleting all tasks raises an unhandled 500 instead of assigning id `1`.
+
+I've fixed all three in the current version of `main.py`.
