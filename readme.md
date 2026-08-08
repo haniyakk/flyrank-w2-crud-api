@@ -29,6 +29,8 @@ The server runs on `http://127.0.0.1:8000`. Interactive docs are available at `h
 | PUT | `/tasks/{id}` | Update a task's title and/or done status | 200 | 400 if title empty, 404 if not found |
 | DELETE | `/tasks/{id}` | Delete a task | 204 | 404 if not found |
 
+All error responses (400, 404) use the shape `{"error": "<message>"}`.
+
 ## Example — curl
 
 ```
@@ -79,5 +81,6 @@ I understand why each of these works — they're straightforward fixes once poin
 **Bugs in my own version, caught by this exercise:**
 1. Whitespace-only titles pass validation on `POST /tasks` (should 400).
 2. `POST /tasks` after deleting all tasks raises an unhandled 500 instead of assigning id `1`.
+
 
 I've fixed all three in the current version of `main.py`.
