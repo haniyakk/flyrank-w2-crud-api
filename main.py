@@ -20,6 +20,27 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         content={"error": exc.detail}
     )
 
+def define_conn():
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, title TEXT, done BOOLEAN)")
+    conn.commit()
+    conn.close()
+
+def adding_hardcoded_tasks():
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    sql_query = """ INSERT INTO tasks 
+                (id, title, done) 
+                VALUES
+                (1, 'Cleaning Table', 'False'),
+                (2, 'Doodle', 'False'),
+                (3, 'Wash bottles', 'False') """
+    define_conn()
+    cursor.execute(sql_query)
+    conn.commit()
+    cursor.close()
+
 tasks = [
     {"id": 1, "title": "Workout", "done": False},
     {"id": 2, "title": "Read a book", "done": True},
@@ -72,16 +93,44 @@ async def create_task(new_task: Task):
     task = {"id": max(t["id"] for t in tasks) + 1, "title": new_task.title, "done": False}
     tasks.append(task)
     return task
+'''
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    sql_query = """ INSERT INTO tasks 
+                (id, title, done) 
+                VALUES
+                (1, 'Cleaning Table', 'False'),
+                (2, 'Doodle', 'False'),
+                (3, 'Wash bottles', 'False') """
+    define_conn()
+    cursor.execute(sql_query)
+    conn.commit()
+    cursor.close()
+'''
 
 @app.get("/tasks", summary="Returns all tasks")
 async def get_tasks():
-    return tasks
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    cursor.execute(" SELECT * FROM tasks ")
+    results = cursor.fetchall()
+    if results != None:
+        for r in results: 
+            print(r)
+    conn.close()
+    
+    return results
 
 @app.get("/tasks/{task_id}", summary="Search task by ID")
 async def get_task(task_id: int):
-    for task in tasks:
-        if task["id"] == task_id:
-            return task
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    sql_query = " SELECT * FROM tasks WHERE id = ?"
+    cursor.execute(sql_query, (task_id,))
+    result = cursor.fetchone()
+    if result != None:
+        return result
+        conn.close()
 
     raise HTTPException(
         status_code=status.HTTP_404_NOT_FOUND, 
@@ -95,27 +144,3 @@ async def read_root():
 @app.get("/health", summary="API Health Check")
 async def health_check():
 	return {"status": "ok" }
-
-
-def define_conn():
-    conn = sqlite3.connect("tasks.db")
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, title TEXT, done BOOLEAN)")
-    conn.commit()
-    conn.close()
-
-def adding_hardcoded_tasks():
-    conn = sqlite3.connect("tasks.db")
-    cursor = conn.cursor()
-    sql_query = """ INSERT INTO tasks 
-                (id, title, done) 
-                VALUES
-                (1, 'Cleaning Table', 'False'),
-                (2, 'Doodle', 'False'),
-                (3, 'Wash bottles', 'False') """
-    define_conn()
-    cursor.execute(sql_query)
-    conn.commit()
-    cursor.close()
-
-adding_hardcoded_tasks()
