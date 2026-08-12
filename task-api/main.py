@@ -22,6 +22,7 @@ next_id = 1
 def _title_is_blank(title) -> bool:
     return title is None or title.strip() == ""
 
+
 @app.get("/")
 def read_root():
     return {"name": "Task", "version": "1.0", "endpoints": ["/tasks"]}

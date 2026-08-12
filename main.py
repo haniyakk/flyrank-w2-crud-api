@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, status, Request
 from pydantic import BaseModel
 from typing import Optional
 from fastapi.responses import JSONResponse
-
+import sqlite3
 
 class Task(BaseModel):
     title: Optional[str] = None
@@ -10,6 +10,7 @@ class Task(BaseModel):
 class TaskUpdate(BaseModel):
     title: Optional[str] = None
     done: Optional[bool] = None
+
 app = FastAPI()
 
 @app.exception_handler(HTTPException)
@@ -94,3 +95,27 @@ async def read_root():
 @app.get("/health", summary="API Health Check")
 async def health_check():
 	return {"status": "ok" }
+
+
+def define_conn():
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, title TEXT, done BOOLEAN)")
+    conn.commit()
+    conn.close()
+
+def adding_hardcoded_tasks():
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    sql_query = """ INSERT INTO tasks 
+                (id, title, done) 
+                VALUES
+                (1, 'Cleaning Table', 'False'),
+                (2, 'Doodle', 'False'),
+                (3, 'Wash bottles', 'False') """
+    define_conn()
+    cursor.execute(sql_query)
+    conn.commit()
+    cursor.close()
+
+adding_hardcoded_tasks()
