@@ -83,16 +83,35 @@ async def delete_task(task_id: int):
 
 @app.post("/tasks", status_code=status.HTTP_201_CREATED, summary="Create a new task")
 async def create_task(new_task: Task):
-
     if new_task.title is not None and not new_task.title.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Title can't be empty"
         )
-        
-    task = {"id": max(t["id"] for t in tasks) + 1, "title": new_task.title, "done": False}
+    curr_id =  max(t["id"] for t in tasks) + 1
+    task = {"id": curr_id + 1, "title": new_task.title, "done": False}
     tasks.append(task)
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    sql_query = " INSERT INTO tasks (id, title, done) VALUES (?, ?, False)"
+    cursor.execute(sql_query, (curr_id, new_task.title, ))
+    conn.commit()
+    conn.close()
     return task
+
+
+@app.get("/tasks", summary="Returns all tasks")
+async def get_tasks():
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    cursor.execute(" SELECT * FROM tasks ")
+    results = cursor.fetchall()
+    if results != None:
+        for r in results: 
+            print(r)
+    conn.close()
+    
+    return results
 '''
     conn = sqlite3.connect("tasks.db")
     cursor = conn.cursor()
@@ -108,18 +127,7 @@ async def create_task(new_task: Task):
     cursor.close()
 '''
 
-@app.get("/tasks", summary="Returns all tasks")
-async def get_tasks():
-    conn = sqlite3.connect("tasks.db")
-    cursor = conn.cursor()
-    cursor.execute(" SELECT * FROM tasks ")
-    results = cursor.fetchall()
-    if results != None:
-        for r in results: 
-            print(r)
-    conn.close()
-    
-    return results
+
 
 @app.get("/tasks/{task_id}", summary="Search task by ID")
 async def get_task(task_id: int):
