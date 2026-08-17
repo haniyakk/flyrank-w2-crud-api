@@ -41,45 +41,43 @@ def adding_hardcoded_tasks():
     conn.commit()
     cursor.close()
 
-tasks = [
-    {"id": 1, "title": "Workout", "done": False},
-    {"id": 2, "title": "Read a book", "done": True},
-    {"id": 3, "title": "Write code", "done": False}
-]
-
 @app.put("/tasks/{task_id}", status_code=status.HTTP_200_OK, summary="Find and update a task by ID")
 async def update_task(task_id: int, updated_task: TaskUpdate):
-    for task in tasks: 
-        if task["id"] == task_id:
-            if updated_task.title is not None: 
-                if not updated_task.title.strip():
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Title can't be empty"
-                    )
-                task["title"] = updated_task.title
-            
-            if updated_task.done is not None: 
-                task["done"] = updated_task.done
-            
-            return task
-
-    raise  HTTPException( 
-            status_code = status.HTTP_404_NOT_FOUND,
-            detail=f"Task {task_id} not found"
+    
+    record = get_task(task_id) 
+    idToBeUpdated = record["id"]
+    
+    if updated_task.title is not None and not updated_task.title.strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Title cannot be empty."
         )
+ 
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+ 
+    if updated_task.title is not None:
+        sql_query = "UPDATE tasks SET title = ? WHERE id = ?"
+        cursor.execute(sql_query, (updated_task.title, idToBeUpdated, ))
+ 
+    if updated_task.done is not None:
+        sql_query2 = "UPDATE tasks SET done = ? WHERE id = ?"
+        cursor.execute(sql_query2, (updated_task.done, task_id, ))
+ 
+    conn.commit()
+    conn.close()
+    return updated_task
 
 @app.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT, summary="Find and delete a task by ID")
 async def delete_task(task_id: int):
-    for i, task in enumerate(tasks):
-        if task["id"] == task_id:
-            del tasks[i]
-            return
-
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND,
-        detail=f"Task {task_id} not found"
-    )
+    get_task(task_id)
+    conn = sqlite3.connect("tasks.db")
+    cursor = conn.cursor()
+    sql_query = "DELETE FROM tasks WHERE id = ?"
+    cursor.execute(sql_query, (task_id, ))
+    conn.commit()
+    conn.close()
+    return
 
 @app.post("/tasks", status_code=status.HTTP_201_CREATED, summary="Create a new task")
 async def create_task(new_task: Task):
@@ -88,17 +86,15 @@ async def create_task(new_task: Task):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Title can't be empty"
         )
-    curr_id =  max(t["id"] for t in tasks) + 1
-    task = {"id": curr_id + 1, "title": new_task.title, "done": False}
-    tasks.append(task)
     conn = sqlite3.connect("tasks.db")
     cursor = conn.cursor()
-    sql_query = " INSERT INTO tasks (id, title, done) VALUES (?, ?, False)"
-    cursor.execute(sql_query, (curr_id, new_task.title, ))
+    sql_query = " INSERT INTO tasks (title, done) VALUES (?, ?)"
+    cursor.execute(sql_query, (new_task.title, False))
     conn.commit()
+    new_id = cursor.lastrowid
     conn.close()
+    task = {"id": new_id, "title": new_task.title, "done": False}
     return task
-
 
 @app.get("/tasks", summary="Returns all tasks")
 async def get_tasks():
@@ -106,44 +102,24 @@ async def get_tasks():
     cursor = conn.cursor()
     cursor.execute(" SELECT * FROM tasks ")
     results = cursor.fetchall()
-    if results != None:
-        for r in results: 
-            print(r)
     conn.close()
-    
-    return results
-'''
-    conn = sqlite3.connect("tasks.db")
-    cursor = conn.cursor()
-    sql_query = """ INSERT INTO tasks 
-                (id, title, done) 
-                VALUES
-                (1, 'Cleaning Table', 'False'),
-                (2, 'Doodle', 'False'),
-                (3, 'Wash bottles', 'False') """
-    define_conn()
-    cursor.execute(sql_query)
-    conn.commit()
-    cursor.close()
-'''
-
-
+    return [{"id": r[0], "title": r[1], "done": bool(r[2])} for r in results]
 
 @app.get("/tasks/{task_id}", summary="Search task by ID")
-async def get_task(task_id: int):
+def get_task(task_id: int):
     conn = sqlite3.connect("tasks.db")
     cursor = conn.cursor()
     sql_query = " SELECT * FROM tasks WHERE id = ?"
     cursor.execute(sql_query, (task_id,))
     result = cursor.fetchone()
-    if result != None:
-        return result
-        conn.close()
-
-    raise HTTPException(
-        status_code=status.HTTP_404_NOT_FOUND, 
-        detail=f"Task {task_id} not found"
+    conn.close()
+    if result is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail=f"Task {task_id} not found"
     )
+    return {"id": result[0], "title": result[1], "done": bool(result[2])}
+    
     
 @app.get("/", summary ="API Information")
 async def read_root():
