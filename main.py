@@ -81,11 +81,13 @@ async def delete_task(task_id: int):
 
 @app.post("/tasks", status_code=status.HTTP_201_CREATED, summary="Create a new task")
 async def create_task(new_task: Task):
+    
     if new_task.title is not None and not new_task.title.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Title can't be empty"
         )
+    
     conn = sqlite3.connect("tasks.db")
     cursor = conn.cursor()
     sql_query = " INSERT INTO tasks (title, done) VALUES (?, ?)"
