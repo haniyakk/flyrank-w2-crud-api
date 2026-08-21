@@ -131,7 +131,7 @@ The database is automatically generated (if not existing already) and stored as 
 Please refer to the [How to install & run](#how-to-install--run) section above. The application will automatically create the database file and initialize the `tasks` table on its first launch.
 
 ### **Screenshot of database viewer**
-![Database Viewer - browsing data](images/browser.png)
+![Database Viewer - browsing data](images/db_browser.png)
 
 ### **Example run of SQL query**
 
@@ -144,7 +144,7 @@ SELECT * FROM tasks
 {"id":3,"title":"Complete A2","done":true}]
 ```
 **Screenshot of query executed real DB**
-![SQL Query - executed](images/runSS.png)
+![SQL Query - executed](images/querySS.png)
 
 Thank you!
 
