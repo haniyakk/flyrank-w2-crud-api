@@ -20,26 +20,21 @@ async def custom_http_exception_handler(request: Request, exc: HTTPException):
         content={"error": exc.detail}
     )
 
-def define_conn():
-    conn = sqlite3.connect("tasks.db")
-    cursor = conn.cursor()
-    cursor.execute("CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, title TEXT, done BOOLEAN)")
-    conn.commit()
-    conn.close()
 
-def adding_hardcoded_tasks():
-    conn = sqlite3.connect("tasks.db")
-    cursor = conn.cursor()
+conn = sqlite3.connect("tasks.db")
+cursor = conn.cursor()
+cursor.execute("CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY, title TEXT, done BOOLEAN)")
+cursor.execute("SELECT COUNT(*) FROM tasks")
+if cursor.fetchone()[0] == 0:
     sql_query = """ INSERT INTO tasks 
-                (id, title, done) 
-                VALUES
-                (1, 'Cleaning Table', 'False'),
-                (2, 'Doodle', 'False'),
-                (3, 'Wash bottles', 'False') """
-    define_conn()
+            (id, title, done) 
+            VALUES
+            (1, 'Cleaning Table', False),
+            (2, 'Doodle', False),
+            (3, 'Wash bottles', False) """
     cursor.execute(sql_query)
-    conn.commit()
-    cursor.close()
+conn.commit()
+cursor.close()
 
 @app.put("/tasks/{task_id}", status_code=status.HTTP_200_OK, summary="Find and update a task by ID")
 async def update_task(task_id: int, updated_task: TaskUpdate):
@@ -82,7 +77,7 @@ async def delete_task(task_id: int):
 @app.post("/tasks", status_code=status.HTTP_201_CREATED, summary="Create a new task")
 async def create_task(new_task: Task):
     
-    if new_task.title is not None and not new_task.title.strip():
+    if not new_task.title or not new_task.title.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Title can't be empty"
@@ -98,11 +93,14 @@ async def create_task(new_task: Task):
     task = {"id": new_id, "title": new_task.title, "done": False}
     return task
 
-@app.get("/tasks", summary="Returns all tasks")
-async def get_tasks():
+@app.get("/tasks", summary="Returns all tasks, or (optionally) filtered tasks only (completed or not)")
+async def get_tasks(done: Optional[bool] = None):
     conn = sqlite3.connect("tasks.db")
     cursor = conn.cursor()
-    cursor.execute(" SELECT * FROM tasks ")
+    if done is None:
+        cursor.execute("SELECT * FROM tasks")
+    else:
+        cursor.execute(" SELECT * FROM tasks WHERE done = ?", (done, ))
     results = cursor.fetchall()
     conn.close()
     return [{"id": r[0], "title": r[1], "done": bool(r[2])} for r in results]
@@ -121,7 +119,6 @@ def get_task(task_id: int):
             detail=f"Task {task_id} not found"
     )
     return {"id": result[0], "title": result[1], "done": bool(result[2])}
-    
     
 @app.get("/", summary ="API Information")
 async def read_root():
